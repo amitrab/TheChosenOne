@@ -78,14 +78,14 @@ def train_loop(args, loop_num: int, vis=True, start_from=0):
         # load diffusion pipeline every epoch for new training image generation, since we clean the model after feature etraction
         if loop == 0:
             # load from default SDXL config.
-            pipe = load_trained_pipeline()
+            pipe = load_trained_pipeline(args)
         else:
             # Note that these configurations are changned during training.
             # Since the training is epoch based and we use iterations, the diffuser training script automatically calculate a new epoch according to the iteration and dataset size, thus the predefined epoches will be overrided.
             args.output_dir_per_loop = os.path.join(output_dir_base, args.character_name, str(loop - 1))
             
             # load model from the output dir in PREVIOUS loop
-            pipe = load_trained_pipeline(model_path=args.output_dir_per_loop, 
+            pipe = load_trained_pipeline(args, model_path=args.output_dir_per_loop, 
                                           load_lora=True, 
                                           lora_path=os.path.join(args.output_dir_per_loop, f"checkpoint-{checkpointing_steps * num_train_epochs}"))
         
@@ -247,7 +247,7 @@ def prepare_init_images(source_path, target_root_path):
         print(f"Copied {src_path} to {dest_path}")
 
 
-def load_trained_pipeline(model_path = None, load_lora=True, lora_path=None):
+def load_trained_pipeline(args, model_path = None, load_lora=True, lora_path=None):
     """
     load the diffusion pipeline according to the trained model
     """
