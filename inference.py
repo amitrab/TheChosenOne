@@ -14,15 +14,16 @@ def config_2_args(path):
     args = parser.parse_args([])
     return args
 
-def run_inference(config_path: str, prompt_postfix: str):
+def run_inference(config_path: str, prompt_postfix: str, safety_checker: bool = False, **kwargs):
     args = config_2_args(config_path)
     
     loop = 2
     model_path = os.path.join(args.output_dir, args.character_name, str(loop))
     pipe = DiffusionPipeline.from_pretrained(model_path, torch_dtype=torch.float16)
     pipe.to("cuda")
-    pipe.safety_checker = None
-    pipe.requires_safety_checker = False
+    if not safety_checker:
+        pipe.safety_checker = None
+        pipe.requires_safety_checker = False
     pipe.load_lora_weights(os.path.join(model_path, f"checkpoint-{args.checkpointing_steps * args.num_train_epochs}"))
     # pipe.load_lora_weights(os.path.join(model_path, f"checkpoint-{args.checkpointing_steps}"))
     
@@ -35,7 +36,7 @@ def run_inference(config_path: str, prompt_postfix: str):
     
     # remember to use the place holader here
     prompt = f"A photo of {args.placeholder_token}{prompt_postfix}."
-    images = pipe(prompt, num_inference_steps=35, guidance_scale=7.5).images
+    images = pipe(prompt, num_inference_steps=35, guidance_scale=7.5, **kwargs).images
     for i, image in enumerate(images):
         image.save(os.path.join(output_folder, f"{args.character_name}_{image_postfix}_{i}.png"))
 
