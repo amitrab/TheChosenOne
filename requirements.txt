@@ -5,7 +5,7 @@ diffusers==0.24.0
 #diffusers.egg==info
 huggingface_hub==0.19.4
 matplotlib==3.8.2
-numpy==1.26.2
+numpy==1.24.1
 packaging==23.2
 Pillow==10.1.0
 #Pillow==10.1.0
