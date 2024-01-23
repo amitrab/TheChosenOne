@@ -256,7 +256,7 @@ def prepare_init_images(source_path, target_root_path):
 
 
 @timed
-def load_trained_pipeline(args, model_path = None, load_lora=True, lora_path=None):
+def load_trained_pipeline(args, model_path = None, load_lora=False, lora_path=None):
     """
     load the diffusion pipeline according to the trained model
     """
