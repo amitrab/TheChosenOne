@@ -50,7 +50,7 @@ from diffusers.models.lora import LoRALinearLayer
 from diffusers.optimization import get_scheduler
 from diffusers.training_utils import compute_snr
 from diffusers.utils import check_min_version, is_wandb_available
-from diffusers.utils.import_utils import is_xformers_available
+from diffusers.utils.import_utils import is_xformers_available, is_torch_bf16_gpu_available
 from PIL import Image
 import PIL
 import safetensors
@@ -777,6 +777,8 @@ def train(args, loop=0, loop_num = 0):
 
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=logging_dir)
     kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
+    if args.mixed_precision == "bf16" and not is_torch_bf16_gpu_available():
+        args.mixed_precision = "fp16"
     accelerator = Accelerator(
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         mixed_precision=args.mixed_precision,
