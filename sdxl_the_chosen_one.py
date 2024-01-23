@@ -42,7 +42,7 @@ from torchvision.transforms.functional import crop
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer, PretrainedConfig, CLIPTextModel, CLIPTokenizer
 import diffusers
-from diffusers import AutoencoderKL, DDPMScheduler, StableDiffusionXLPipeline, UNet2DConditionModel
+from diffusers import AutoencoderKL, DDPMScheduler, StableDiffusionXLPipeline, UNet2DConditionModel, DiffusionPipeline
 from diffusers.loaders import LoraLoaderMixin
 # from diffusers.models.lora import LoRALinearLayer, text_encoder_lora_state_dict
 from diffusers.models.lora import LoRALinearLayer
@@ -1567,7 +1567,8 @@ def train(args, loop=0, loop_num = 0):
                     f" {args.validation_prompt}."
                 )
                 # create pipeline
-                pipeline = StableDiffusionXLPipeline.from_pretrained(
+                # pipeline = StableDiffusionXLPipeline.from_pretrained(
+                pipeline = DiffusionPipeline.from_pretrained(
                     args.pretrained_model_name_or_path,
                     vae=vae,
                     text_encoder=accelerator.unwrap_model(text_encoder_one),

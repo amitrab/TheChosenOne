@@ -47,6 +47,7 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 from scipy.spatial.distance import cdist
 from utils import timed
+from sfast.compilers.diffusion_pipeline_compiler import compile, CompilationConfig
 
 logging.basicConfig(format='%(asctime)s %(message)s', 
                     level=logging.DEBUG,
@@ -287,6 +288,9 @@ def load_trained_pipeline(args, model_path = None, load_lora=False, lora_path=No
         pipe.set_adapters(["lora", "style"], adapter_weights=[1.0, 0.8])
     
     pipe.to("cuda")
+
+    pipe = compile(pipe, get_sfast_config())
+
     return pipe
 
 
@@ -330,6 +334,24 @@ def load_dinov2():
     dinov2_vitl14.eval()
     return dinov2_vitl14
 
+
+def get_sfast_config():
+    config = CompilationConfig.Default()
+    # xformers and Triton are suggested for achieving best performance.
+    try:
+        import xformers
+        config.enable_xformers = True
+    except ImportError:
+        print('xformers not installed, skip')
+    try:
+        import triton
+        config.enable_triton = True
+    except ImportError:
+        print('Triton not installed, skip')
+
+    config.enable_cuda_graph = True
+
+    return config
 
 if __name__ == "__main__":
     args = config_2_args("./config/theChosenOne.yaml")

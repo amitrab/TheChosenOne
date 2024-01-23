@@ -6,6 +6,7 @@
 # lora_name_or_path: "latent-consistency/lcm-lora-sdxl"
 
 pretrained_model_name_or_path: segmind/SSD-1B
+# pretrained_model_name_or_path: latent-consistency/lcm-ssd-1b
 lora_name_or_path: latent-consistency/lcm-lora-ssd-1b
 
 # pretrained_model_name_or_path: stabilityai/sdxl-turbo
