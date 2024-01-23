@@ -61,6 +61,7 @@ dsize_c: 5
 # dsize_c: 3   
 # infer_steps: 35
 infer_steps: 5
+guidance_scale: 1.0
 
 adam_epsilon: 0.000000001
 adam_weight_decay: 0.0001

@@ -113,7 +113,7 @@ def train_loop(args, loop_num: int, vis=True, start_from=0):
             if loop==0 and os.path.exists(os.path.join(tmp_folder, f"{n_img}.png")):
                 image = Image.open(os.path.join(tmp_folder, f"{n_img}.png")).convert('RGB')
             else:
-                image = generate_images(pipe, prompt=args.inference_prompt, infer_steps=args.infer_steps)
+                image = generate_images(pipe, prompt=args.inference_prompt, infer_steps=args.infer_steps, guidance_scale=args.guidance_scale)
                 
             images.append(image)
             
