@@ -277,9 +277,10 @@ def load_trained_pipeline(args, model_path = None, load_lora=False, lora_path=No
         pipe = DiffusionPipeline.from_pretrained(args.pretrained_model_name_or_path, torch_dtype=torch.float16, use_safetensors=True, variant="fp16")
         print(f"loaded defualt model which is: {args.pretrained_model_name_or_path}")
     
-    pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
-    # pipe.load_lora_weights("latent-consistency/lcm-lora-sdxl")
-    pipe.load_lora_weights("latent-consistency/lcm-lora-ssd-1b")
+    if args.lcm_lora:
+        pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+    if args.lora_name_or_path:
+        pipe.load_lora_weights(args.lora_name_or_path)
 
     if load_lora:
         pipe.load_lora_weights(lora_path, weight_name="style.safetensors", adapter_name="style")
