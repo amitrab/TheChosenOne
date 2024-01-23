@@ -24,7 +24,7 @@ learnable_property: object
 initializer_token: cha
 placeholder_token: <$V$>
 repeats: 1
-save_as_full_pipeline: true
+save_as_full_pipeline: false
 validation_prompt: A photo of <$V$>
 caption_column: text
 resolution: 512
