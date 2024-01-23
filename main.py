@@ -317,7 +317,7 @@ def generate_images(pipe: StableDiffusionXLPipeline, prompt: str, infer_steps, g
 
 def load_dinov2():
     # can use dinov2_vitb14 3x smaller
-    dinov2_vitl14 = torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14').cuda()
+    dinov2_vitl14 = torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14_reg').cuda()
     dinov2_vitl14.eval()
     return dinov2_vitl14
 
