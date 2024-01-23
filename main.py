@@ -71,10 +71,7 @@ def train_loop(args, loop_num: int, vis=True, start_from=0):
         print("###########################################################################")
         print("###########################################################################")
         print()
-        
-        # load dinov2 every epoch, since we clean the model after feature etraction
-        dinov2 = load_dinov2()
-        
+                
         # load diffusion pipeline every epoch for new training image generation, since we clean the model after feature etraction
         if loop == 0:
             # load from default SDXL config.
@@ -115,7 +112,6 @@ def train_loop(args, loop_num: int, vis=True, start_from=0):
                 image = generate_images(pipe, prompt=args.inference_prompt, infer_steps=args.infer_steps)
                 
             images.append(image)
-            image_embs.append(infer_model(dinov2, image).detach().cpu().numpy())
             
             # save the initial images in the backup folder
             if not os.path.exists(tmp_folder):
@@ -124,8 +120,14 @@ def train_loop(args, loop_num: int, vis=True, start_from=0):
         
         # clean up the GPU consumption after inference
         del pipe
-        del dinov2
         torch.cuda.empty_cache()
+
+        # load dinov2 every epoch, since we clean the model after feature extraction
+        dinov2 = load_dinov2()
+        for image in images:
+            image_embs.append(infer_model(dinov2, image).detach().cpu().numpy())
+
+        del dinov2
         
         # reshaping
         embeddings = np.array(image_embs)
