@@ -1,6 +1,6 @@
 import argparse
 # import itertools
-# import logging
+import logging
 # import math
 import os
 # import random
@@ -46,7 +46,11 @@ from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 from scipy.spatial.distance import cdist
+from utils import timed
 
+logging.basicConfig(format='%(asctime)s %(message)s', 
+                    level=logging.DEBUG,
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
 def train_loop(args, loop_num: int, vis=True, start_from=0):
     """
@@ -188,6 +192,7 @@ def train_loop(args, loop_num: int, vis=True, start_from=0):
         print()
         
 
+@timed
 def kmeans_clustering(args, data_points, images = None):
     kmeans = KMeans(n_clusters=args.kmeans_center, init='k-means++', random_state=42)
     kmeans.fit(data_points)
@@ -250,6 +255,7 @@ def prepare_init_images(source_path, target_root_path):
         print(f"Copied {src_path} to {dest_path}")
 
 
+@timed
 def load_trained_pipeline(args, model_path = None, load_lora=True, lora_path=None):
     """
     load the diffusion pipeline according to the trained model
@@ -295,6 +301,7 @@ def config_2_args(path):
     return args
 
 
+@timed
 def infer_model(model, image):
     transform = T.Compose([
         T.Resize((518, 518)),
@@ -306,6 +313,7 @@ def infer_model(model, image):
     return cls_token
 
 
+@timed
 def generate_images(pipe: StableDiffusionXLPipeline, prompt: str, infer_steps, guidance_scale=7.5):
     """
     use the given DiffusionPipeline, generate N images for the same character

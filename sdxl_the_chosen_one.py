@@ -35,7 +35,7 @@ from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import DistributedDataParallelKwargs, ProjectConfiguration, set_seed
 from datasets import load_dataset
-from huggingface_hub import create_repo, upload_folder
+# from huggingface_hub import create_repo, upload_folder
 from packaging import version
 from torchvision import transforms
 from torchvision.transforms.functional import crop
@@ -54,6 +54,7 @@ from diffusers.utils.import_utils import is_xformers_available
 from PIL import Image
 import PIL
 import safetensors
+from utils import timed, timed_ctx
 
 
 if version.parse(version.parse(PIL.__version__).base_version) >= version.parse("9.1.0"):
@@ -81,6 +82,7 @@ check_min_version("0.24.0.dev0")
 logger = get_logger(__name__)
 
 
+@timed
 def save_progress(text_encoder, placeholder_token_ids, accelerator, args, save_path, safe_serialization=True):
     logger.info("Saving embeddings")
     learned_embeds = (
@@ -706,6 +708,7 @@ def unet_attn_processors_state_dict(unet) -> Dict[str, torch.tensor]:
     return attn_processors_state_dict
 
 
+@timed
 def tokenize_prompt(tokenizer, prompt):
     text_inputs = tokenizer(
         prompt,
@@ -719,6 +722,7 @@ def tokenize_prompt(tokenizer, prompt):
 
 
 # Adapted from pipelines.StableDiffusionXLPipeline.encode_prompt
+@timed
 def encode_prompt(text_encoders, tokenizers, prompt, text_input_ids_list=None):
     prompt_embeds_list = []
 
@@ -747,6 +751,7 @@ def encode_prompt(text_encoders, tokenizers, prompt, text_input_ids_list=None):
     return prompt_embeds, pooled_prompt_embeds
 
 
+@timed
 def train(args, loop=0, loop_num = 0):
     # for Loop training
     if "output_dir_per_loop" in args:#
@@ -811,6 +816,7 @@ def train(args, loop=0, loop_num = 0):
             os.makedirs(args.output_dir, exist_ok=True)
 
         if args.push_to_hub:
+            from huggingface_hub import create_repo, upload_folder
             repo_id = create_repo(
                 repo_id=args.hub_model_id or Path(args.output_dir).name, exist_ok=True, token=args.hub_token
             ).repo_id
@@ -1386,7 +1392,8 @@ def train(args, loop=0, loop_num = 0):
                     pixel_values = batch["pixel_values"]
                     
                 # Convert images to latent space
-                model_input = vae.encode(pixel_values).latent_dist.sample()
+                with timed_ctx("vae.encode"):
+                    model_input = vae.encode(pixel_values).latent_dist.sample()
                 model_input = model_input * vae.config.scaling_factor
                 if args.pretrained_vae_model_name_or_path is None:
                     model_input = model_input.to(weight_dtype)
@@ -1408,7 +1415,8 @@ def train(args, loop=0, loop_num = 0):
 
                 # Add noise to the model input according to the noise magnitude at each timestep
                 # (this is the forward diffusion process)
-                noisy_model_input = noise_scheduler.add_noise(model_input, noise, timesteps)
+                with timed_ctx("noise_scheduler.add_noise"):
+                    noisy_model_input = noise_scheduler.add_noise(model_input, noise, timesteps)
 
                 # time ids
                 def compute_time_ids(original_size, crops_coords_top_left):
@@ -1428,12 +1436,13 @@ def train(args, loop=0, loop_num = 0):
 
                 # Predict the noise residual
                 unet_added_conditions = {"time_ids": add_time_ids}
-                prompt_embeds, pooled_prompt_embeds = encode_prompt(
-                    text_encoders=[text_encoder_one, text_encoder_two],
-                    tokenizers=None,
-                    prompt=None,
-                    text_input_ids_list=[batch["input_ids_one"], batch["input_ids_two"]],
-                )
+                with timed_ctx("encode_prompt"):
+                    prompt_embeds, pooled_prompt_embeds = encode_prompt(
+                        text_encoders=[text_encoder_one, text_encoder_two],
+                        tokenizers=None,
+                        prompt=None,
+                        text_input_ids_list=[batch["input_ids_one"], batch["input_ids_two"]],
+                    )
                 unet_added_conditions.update({"text_embeds": pooled_prompt_embeds})
                 model_pred = unet(
                     noisy_model_input, timesteps, prompt_embeds, added_cond_kwargs=unet_added_conditions
