@@ -37,7 +37,7 @@ from PIL import Image
 # import safetensors
 import yaml
 import numpy as np
-from diffusers import DiffusionPipeline
+from diffusers import DiffusionPipeline, LCMScheduler
 from sdxl_the_chosen_one import train as train_pipeline
 import shutil
 # from pathlib import Path
@@ -128,6 +128,7 @@ def train_loop(args, loop_num: int, vis=True, start_from=0):
             image_embs.append(infer_model(dinov2, image).detach().cpu().numpy())
 
         del dinov2
+        torch.cuda.empty_cache()
         
         # reshaping
         embeddings = np.array(image_embs)
@@ -258,18 +259,26 @@ def load_trained_pipeline(args, model_path = None, load_lora=True, lora_path=Non
         print("loaded model of nir ")
         print("loaded model of nir ")
         print("loaded model of nir ")
-        pipe = DiffusionPipeline.from_pretrained(model_path, torch_dtype=torch.float16)
+        pipe = DiffusionPipeline.from_pretrained(model_path, torch_dtype=torch.float16, use_safetensors=True, variant="fp16")
         pipe.safety_checker = None
         pipe.requires_safety_checker = False
-        if load_lora:
-            pipe.load_lora_weights(lora_path)
+
     else:
         # print("loaded defualt model")
         # print("loaded defualt model")
         # print("loaded defualt model")
         # pipe = DiffusionPipeline.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0")
-        pipe = DiffusionPipeline.from_pretrained(args.pretrained_model_name_or_path)
+        pipe = DiffusionPipeline.from_pretrained(args.pretrained_model_name_or_path, torch_dtype=torch.float16, use_safetensors=True, variant="fp16")
         print(f"loaded defualt model which is: {args.pretrained_model_name_or_path}")
+    
+    pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+    # pipe.load_lora_weights("latent-consistency/lcm-lora-sdxl")
+    pipe.load_lora_weights("latent-consistency/lcm-lora-ssd-1b")
+
+    if load_lora:
+        pipe.load_lora_weights(lora_path, weight_name="style.safetensors", adapter_name="style")
+        pipe.set_adapters(["lora", "style"], adapter_weights=[1.0, 0.8])
+    
     pipe.to("cuda")
     return pipe
 
@@ -307,6 +316,7 @@ def generate_images(pipe: StableDiffusionXLPipeline, prompt: str, infer_steps, g
 
 
 def load_dinov2():
+    # can use dinov2_vitb14 3x smaller
     dinov2_vitl14 = torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14').cuda()
     dinov2_vitl14.eval()
     return dinov2_vitl14

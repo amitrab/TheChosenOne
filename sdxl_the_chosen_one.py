@@ -1563,6 +1563,7 @@ def train(args, loop=0, loop_num = 0):
                     unet=accelerator.unwrap_model(unet),
                     revision=args.revision,
                     torch_dtype=weight_dtype,
+                    use_safetensors=True, variant="fp16",
                 )
 
                 pipeline = pipeline.to(accelerator.device)
@@ -1634,7 +1635,7 @@ def train(args, loop=0, loop_num = 0):
         print("###########################################################################")
         print()
         pipeline = StableDiffusionXLPipeline.from_pretrained(
-            args.pretrained_model_name_or_path, vae=vae, revision=args.revision, torch_dtype=weight_dtype
+            args.pretrained_model_name_or_path, vae=vae, revision=args.revision, torch_dtype=weight_dtype, use_safetensors=True, variant="fp16"
         )
         pipeline = pipeline.to(accelerator.device)
 
@@ -1688,6 +1689,7 @@ def train(args, loop=0, loop_num = 0):
                 unet=unet,
                 tokenizer=tokenizer_one,
                 tokenizer_2=tokenizer_two,
+                use_safetensors=True, variant="fp16",
             )
             pipeline.save_pretrained(args.output_dir)
             
